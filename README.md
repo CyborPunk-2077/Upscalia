@@ -55,22 +55,39 @@ saved as your own preset.
 
 ---
 
-## Install
+## Run it
 
-```bash
-npm install
-npm start
-```
+**Double-click `RUN_VISIONANCE.cmd`.**
 
-Requires Node.js 22.12 or newer (Electron 43's minimum) and a GPU with WebGL2.
-No Docker, database or separate backend is involved.
+That's it. It installs anything missing and opens the app.
+
+<details>
+<summary>Prerequisites and other scripts</summary>
+
+**Prerequisite:** [Node.js](https://nodejs.org) 22.12 or newer. Nothing else —
+no Docker, no database, no separate backend. If Node is missing, the launcher
+says so and links you to the installer.
+
+You also need a GPU with WebGL2 (anything from roughly 2014 onwards).
+
+| Script | What it does |
+|---|---|
+| `RUN_VISIONANCE.cmd` | Checks prerequisites, installs dependencies if needed, starts the app |
+| `STOP_VISIONANCE.cmd` | Stops a running instance. Never deletes anything |
+| `RESET_VISIONANCE.cmd` | Deletes `node_modules`, `dist`, `logs`. Asks for confirmation first; leaves your source, Git history and saved presets alone |
+
+The first run downloads the Electron runtime (~200 MB) and takes a few minutes.
+Later runs start immediately. Logs stream in the console window and are written
+to `logs/`.
+
+On macOS or Linux, use `npm install && npm start`.
 
 ### External tools
 
 | Tool | Needed for | How it's found |
 |---|---|---|
 | **ffmpeg / ffprobe** | Export, media probing | Bundled via `ffmpeg-static`; a system install or a manual path set in Settings also works |
-| **yt-dlp** | Playing online links | Not bundled. Settings -> *Install* downloads the latest build into your user data folder |
+| **yt-dlp** | Playing online links | Not bundled. Settings → *Install* downloads the latest build into your user data folder |
 
 Both can be overridden from **Settings** if you keep your own builds.
 
@@ -87,6 +104,8 @@ exactly one, in the `allowScripts` field of `package.json`:
 
 Electron needs no approval: since v43 it has no install script and fetches its
 runtime on first use instead.
+
+</details>
 
 ---
 
