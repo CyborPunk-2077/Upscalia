@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self' vs:; img-src 'self' vs: data: blob: https:; media-src 'self' vs: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' vs:;">
+<title>Visionance</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- ───────────────────────── Top bar ───────────────────────── -->
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <defs>
+          <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#4be1f5"/>
+            <stop offset="100%" stop-color="#8b6cf6"/>
+          </linearGradient>
+        </defs>
+        <path d="M4 6h24v20H4z" fill="none" stroke="url(#bg1)" stroke-width="2" rx="3"/>
+        <path d="M12 11l9 5-9 5z" fill="url(#bg1)"/>
+      </svg>
+      <div class="brand-text">
+        <strong>Visionance</strong>
+        <span id="brandSub">Real-time enhancement</span>
+      </div>
+    </div>
+
+    <div class="omnibar">
+      <input id="urlInput" type="text" spellcheck="false"
+             placeholder="Paste a video URL, or drop a file anywhere…"
+             aria-label="Video URL">
+      <button id="goBtn" class="btn btn-accent" title="Resolve and play (Enter)">Play</button>
+      <button id="openFileBtn" class="btn btn-ghost" title="Open a local file (Ctrl+O)">Open file</button>
+    </div>
+
+    <div class="topbar-right">
+      <button id="statsBtn" class="icon-btn" title="Statistics overlay (Ctrl+I)">◔</button>
+      <button id="settingsBtn" class="icon-btn" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- ───────────────────────── Main ───────────────────────── -->
+  <main class="main">
+
+    <section class="stage" id="stage">
+      <div class="stage-inner" id="stageInner">
+        <canvas id="glCanvas" class="hidden"></canvas>
+
+        <!-- Hidden media elements: the canvas is what the user sees -->
+        <video id="video" playsinline></video>
+        <audio id="audio"></audio>
+
+        <div class="stage-empty" id="stageEmpty">
+          <div class="empty-art">
+            <div class="empty-ring"></div>
+            <div class="empty-ring d2"></div>
+            <span>▶</span>
+          </div>
+          <h2>Drop a video here</h2>
+          <p>Or paste a link above. Visionance upscales and cleans it up live on your GPU — nothing is downloaded, nothing is re-encoded.</p>
+          <div class="empty-actions">
+            <button class="btn btn-accent" id="emptyOpenBtn">Open a file</button>
+            <button class="btn btn-ghost" id="emptyDemoBtn">What does it do?</button>
+          </div>
+        </div>
+
+        <div class="stage-loading" id="stageLoading" hidden>
+          <div class="spinner"></div>
+          <p id="loadingText">Resolving stream…</p>
+        </div>
+
+        <div class="stats-overlay" id="statsOverlay" hidden></div>
+
+        <div class="compare-labels" id="compareLabels" hidden>
+          <span class="lbl left">Original</span>
+          <span class="lbl right">Enhanced</span>
+        </div>
+
+        <div class="split-handle" id="splitHandle" hidden></div>
+
+        <div class="toast-stack" id="toastStack"></div>
+      </div>
+
+      <!-- Transport -->
+      <div class="transport" id="transport">
+        <div class="scrub" id="scrub">
+          <div class="scrub-track">
+            <div class="scrub-buffered" id="scrubBuffered"></div>
+            <div class="scrub-played" id="scrubPlayed"></div>
+            <div class="scrub-knob" id="scrubKnob"></div>
+          </div>
+          <div class="scrub-tooltip" id="scrubTooltip">0:00</div>
+        </div>
+
+        <div class="transport-row">
+          <div class="tgroup">
+            <button class="icon-btn lg" id="playBtn" title="Play / Pause (Space)">▶</button>
+            <button class="icon-btn" id="back10Btn" title="Back 10s (←)">⟲</button>
+            <button class="icon-btn" id="fwd10Btn" title="Forward 10s (→)">⟳</button>
+            <div class="volume">
+              <button class="icon-btn" id="muteBtn" title="Mute (M)">🔊</button>
+              <input type="range" id="volume" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+            </div>
+            <span class="time" id="timeLabel">0:00 / 0:00</span>
+          </div>
+
+          <div class="tgroup center">
+            <button class="pill" id="enhanceToggle" title="Toggle enhancement (Ctrl+B)">
+              <span class="dot"></span> Enhancement on
+            </button>
+            <button class="pill ghost" id="compareBtn" title="Split compare (Ctrl+D)">Compare</button>
+            <span class="res-badge" id="resBadge">—</span>
+          </div>
+
+          <div class="tgroup right">
+            <select id="speedSelect" class="mini-select" title="Playback speed">
+              <option value="0.25">0.25×</option>
+              <option value="0.5">0.5×</option>
+              <option value="0.75">0.75×</option>
+              <option value="1" selected>1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+            <button class="icon-btn" id="snapshotBtn" title="Save enhanced frame (S)">⛶</button>
+            <button class="icon-btn" id="pipBtn" title="Picture in picture">⧉</button>
+            <button class="icon-btn" id="fullscreenBtn" title="Fullscreen (F)">⛶</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── Side panel ───────────────────────── -->
+    <aside class="panel" id="panel">
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="presets">Presets</button>
+        <button class="tab" data-tab="adjust">Adjust</button>
+        <button class="tab" data-tab="export">Export</button>
+        <button class="tab" data-tab="library">Library</button>
+      </nav>
+
+      <div class="tab-body">
+
+        <!-- Presets -->
+        <section class="tab-page active" data-page="presets">
+          <div class="preset-grid" id="presetGrid"></div>
+
+          <div class="field-row">
+            <label for="scaleSelect">Render resolution</label>
+            <select id="scaleSelect" class="select">
+              <option value="auto">Auto (match display)</option>
+              <option value="1">1× source</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+              <option value="3">3×</option>
+              <option value="4">4×</option>
+            </select>
+          </div>
+          <p class="field-help">Auto renders exactly enough pixels for your screen. Higher values look sharper only if your display can show them.</p>
+
+          <div class="field-row switch-row">
+            <label for="adaptiveToggle">Adaptive quality</label>
+            <input type="checkbox" id="adaptiveToggle" class="switch" checked>
+          </div>
+          <p class="field-help">Automatically lowers the render resolution if your GPU can't keep up, instead of stuttering.</p>
+
+          <div class="save-preset">
+            <input type="text" id="presetName" placeholder="Name this look…" maxlength="40">
+            <button class="btn btn-ghost" id="savePresetBtn">Save preset</button>
+          </div>
+        </section>
+
+        <!-- Adjust -->
+        <section class="tab-page" data-page="adjust">
+          <div id="controlGroups"></div>
+          <button class="btn btn-ghost full" id="resetParamsBtn">Reset to preset</button>
+        </section>
+
+        <!-- Export -->
+        <section class="tab-page" data-page="export">
+          <div class="export-intro">
+            <h3>Render a permanent copy</h3>
+            <p>Bakes the current look into a new file with ffmpeg. Playback stays live and free — use this only when you need a file to share.</p>
+          </div>
+
+          <div class="field-row">
+            <label for="exportRes">Output resolution</label>
+            <select id="exportRes" class="select">
+              <option value="source">Same as source</option>
+              <option value="720p">1280 × 720</option>
+              <option value="1080p" selected>1920 × 1080</option>
+              <option value="1440p">2560 × 1440</option>
+              <option value="2160p">3840 × 2160 (4K)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="exportEncoder">Encoder</label>
+            <select id="exportEncoder" class="select">
+              <option value="libx264">H.264 (CPU, most compatible)</option>
+            </select>
+          </div>
+
+          <div class="field-row">
+            <label for="exportQuality">Quality <span class="val" id="exportQualityVal">70</span></label>
+            <input type="range" id="exportQuality" min="10" max="100" step="1" value="70">
+          </div>
+
+          <div class="field-row switch-row">
+            <label for="exportAudio">Keep audio</label>
+            <input type="checkbox" id="exportAudio" class="switch" checked>
+          </div>
+
+          <button class="btn btn-accent full" id="startExportBtn">Choose destination &amp; render</button>
+
+          <div class="jobs" id="jobList"></div>
+        </section>
+
+        <!-- Library -->
+        <section class="tab-page" data-page="library">
+          <div class="library-head">
+            <h3>Recent</h3>
+            <button class="link-btn" id="clearRecentsBtn">Clear</button>
+          </div>
+          <div class="recent-list" id="recentList"></div>
+        </section>
+
+      </div>
+    </aside>
+  </main>
+
+  <!-- ───────────────────────── Drop overlay ───────────────────────── -->
+  <div class="drop-overlay" id="dropOverlay" hidden>
+    <div class="drop-card">
+      <div class="drop-icon">↧</div>
+      <p>Release to play</p>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Settings modal ───────────────────────── -->
+  <div class="modal-backdrop" id="settingsModal" hidden>
+    <div class="modal">
+      <header class="modal-head">
+        <h2>Settings</h2>
+        <button class="icon-btn" id="closeSettings">✕</button>
+      </header>
+
+      <div class="modal-body">
+        <section class="settings-block">
+          <h3>Online video</h3>
+          <div class="dep-row" id="ytdlpRow">
+            <div>
+              <strong>yt-dlp</strong>
+              <p class="muted" id="ytdlpStatus">Checking…</p>
+            </div>
+            <div class="dep-actions">
+              <button class="btn btn-ghost" id="installYtdlpBtn">Install</button>
+              <button class="btn btn-ghost" id="locateYtdlpBtn">Locate…</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label for="maxHeight">Maximum stream height</label>
+            <select id="maxHeight" class="select">
+              <option value="720">720p (lightest)</option>
+              <option value="1080" selected>1080p</option>
+              <option value="1440">1440p</option>
+              <option value="2160">2160p</option>
+              <option value="0">No limit</option>
+            </select>
+          </div>
+          <p class="field-help">Visionance rebuilds detail on the GPU, so a clean 1080p stream usually looks better — and starts instantly — compared to waiting on a 4K one.</p>
+
+          <div class="field-row">
+            <label for="cookieBrowser">Use cookies from</label>
+            <select id="cookieBrowser" class="select">
+              <option value="">None</option>
+              <option value="chrome">Chrome</option>
+              <option value="edge">Edge</option>
+              <option value="firefox">Firefox</option>
+              <option value="brave">Brave</option>
+              <option value="safari">Safari</option>
+            </select>
+          </div>
+          <p class="field-help">Needed for age-restricted or members-only videos you already have access to.</p>
+        </section>
+
+        <section class="settings-block">
+          <h3>Encoding</h3>
+          <div class="dep-row">
+            <div>
+              <strong>ffmpeg</strong>
+              <p class="muted" id="ffmpegStatus">Checking…</p>
+            </div>
+            <div class="dep-actions">
+              <button class="btn btn-ghost" id="locateFfmpegBtn">Locate…</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-block">
+          <h3>Playback</h3>
+          <div class="field-row switch-row">
+            <label for="autoplayToggle">Play automatically when a video opens</label>
+            <input type="checkbox" id="autoplayToggle" class="switch" checked>
+          </div>
+          <div class="field-row switch-row">
+            <label for="resumeToggle">Remember playback position</label>
+            <input type="checkbox" id="resumeToggle" class="switch" checked>
+          </div>
+          <div class="field-row">
+            <label for="targetFpsSelect">Frame budget target</label>
+            <select id="targetFpsSelect" class="select">
+              <option value="30">30 fps</option>
+              <option value="60" selected>60 fps</option>
+              <option value="120">120 fps</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="settings-block">
+          <h3>About</h3>
+          <p class="muted" id="aboutText">—</p>
+          <p class="muted small">Visionance renders enhancement on your GPU in real time. Online playback is resolved with yt-dlp; only sources you are entitled to access should be used.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Info modal ───────────────────────── -->
+  <div class="modal-backdrop" id="infoModal" hidden>
+    <div class="modal narrow">
+      <header class="modal-head">
+        <h2>How Visionance works</h2>
+        <button class="icon-btn" id="closeInfo">✕</button>
+      </header>
+      <div class="modal-body prose">
+        <p>Every frame passes through four GPU shader stages before it reaches your screen:</p>
+        <ol>
+          <li><strong>Restore</strong> — edge-aware denoise and compression-artefact cleanup at source resolution, so noise never gets magnified.</li>
+          <li><strong>Reconstruct</strong> — Catmull-Rom resampling plus edge-directed correction, which removes staircase edges instead of blurring them.</li>
+          <li><strong>Sharpen</strong> — contrast-adaptive sharpening: strong where the picture is soft, restrained where it is already detailed, with halo suppression.</li>
+          <li><strong>Finish</strong> — debanding, local contrast, tone curve and colour.</li>
+        </ol>
+        <p>Nothing is written to disk and nothing is re-encoded, so a 1080p stream can look close to a native 4K file without the 20&nbsp;GB download or the wait.</p>
+        <p>When you do need a file — for editing, uploading or sending to someone — the <strong>Export</strong> tab renders the same look with ffmpeg.</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/shaders.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/presets.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

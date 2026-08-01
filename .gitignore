@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+build/
+release/
+*.asar
+
+# Bundled binaries (see bin/README.md) - large, platform-specific, not source
+bin/*
+!bin/README.md
+
+# Runtime + local state written by the app or the launcher
+videos/
+.visionance/
+*.pid
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Superseded pre-2.0 mockup, kept locally for reference only
+_legacy/
+
+# Test artefacts
+tools/smoke-screenshot.png
+coverage/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,96 @@
+{
+  "name": "visionance",
+  "productName": "Visionance",
+  "version": "2.0.0",
+  "description": "Real-time GPU video enhancement and upscaling player for local files and online streams.",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist:linux": "electron-builder --linux AppImage deb",
+    "verify:gl": "electron tools/verify-electron.js",
+    "verify:export": "node tools/verify-export.js",
+    "verify:app": "electron tools/smoke.js",
+    "verify": "npm run verify:gl && npm run verify:export && npm run verify:app",
+    "launch": "node tools/launcher.js",
+    "stop": "node tools/launcher.js --stop",
+    "doctor": "node tools/launcher.js --doctor"
+  },
+  "keywords": [
+    "video",
+    "upscaling",
+    "player",
+    "webgl",
+    "enhancement",
+    "ffmpeg",
+    "electron"
+  ],
+  "author": "Visionance",
+  "license": "MIT",
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "ffprobe-static": "^3.1.0"
+  },
+  "devDependencies": {
+    "electron": "^43.2.0",
+    "electron-builder": "^26.0.0"
+  },
+  "build": {
+    "appId": "com.visionance.app",
+    "productName": "Visionance",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "!_legacy/**/*",
+      "!videos/**/*"
+    ],
+    "asarUnpack": [
+      "node_modules/ffmpeg-static/**",
+      "node_modules/ffprobe-static/**"
+    ],
+    "extraResources": [
+      {
+        "from": "bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.video",
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "AudioVideo",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  },
+  "allowScripts": {
+    "ffmpeg-static@5.2.0": true,
+    "electron-winstaller": false
+  }
+}
