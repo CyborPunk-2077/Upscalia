@@ -1,12 +1,12 @@
-# Visionance
+# Upscalia
 
 **Real-time GPU video enhancement.** Play a local file or paste a link, and
-Visionance upscales, cleans and grades every frame on your GPU as it plays —
+Upscalia upscales, cleans and grades every frame on your GPU as it plays —
 no download, no re-encode, no waiting.
 
 The problem it solves: a 1080p stream and a 4K file often look far more similar
 than the 20 GB size difference suggests, because most of what you notice is
-compression damage, not missing resolution. Visionance repairs the damage and
+compression damage, not missing resolution. Upscalia repairs the damage and
 reconstructs edges live, so you get most of the "premium" look from the file you
 already have.
 
@@ -57,7 +57,7 @@ saved as your own preset.
 
 ## Run it
 
-**Double-click `RUN_VISIONANCE.cmd`.**
+**Double-click `RUN_Upscalia.cmd`.**
 
 That's it. It installs anything missing and opens the app.
 
@@ -72,9 +72,9 @@ You also need a GPU with WebGL2 (anything from roughly 2014 onwards).
 
 | Script | What it does |
 |---|---|
-| `RUN_VISIONANCE.cmd` | Checks prerequisites, installs dependencies if needed, starts the app |
-| `STOP_VISIONANCE.cmd` | Stops a running instance. Never deletes anything |
-| `RESET_VISIONANCE.cmd` | Deletes `node_modules`, `dist`, `logs`. Asks for confirmation first; leaves your source, Git history and saved presets alone |
+| `RUN_Upscalia.cmd` | Checks prerequisites, installs dependencies if needed, starts the app |
+| `STOP_Upscalia.cmd` | Stops a running instance. Never deletes anything |
+| `RESET_Upscalia.cmd` | Deletes `node_modules`, `dist`, `logs`. Asks for confirmation first; leaves your source, Git history and saved presets alone |
 
 The first run downloads the Electron runtime (~200 MB) and takes a few minutes.
 Later runs start immediately. Logs stream in the console window and are written
@@ -188,7 +188,7 @@ npm run verify:app       # boots the app and asserts the IPC bridge, engine
                          # and UI all came up
 
 # add a real playback pass to the boot test
-VISIONANCE_TEST_VIDEO=/path/to/clip.mp4 npm run verify:app
+Upscalia_TEST_VIDEO=/path/to/clip.mp4 npm run verify:app
 ```
 
 On a headless Linux box, prefix with `xvfb-run -a`.
@@ -197,7 +197,7 @@ On a headless Linux box, prefix with `xvfb-run -a`.
 
 ## Notes on online video
 
-Visionance resolves stream URLs with yt-dlp and plays them directly; it does not
+Upscalia resolves stream URLs with yt-dlp and plays them directly; it does not
 download or store copies. You are responsible for only using it with content you
 are entitled to access, and for complying with the terms of service of the sites
 you point it at. yt-dlp is not bundled — the app downloads it on request.
